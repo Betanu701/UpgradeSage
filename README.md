@@ -9,13 +9,6 @@ Instant breaking-change analysis between two versions of any Git repo, powered b
 /web   → Vite + React frontend  (form + Markdown report viewer)
 ```
 
-**New Features:**
-- 🔐 Optional GitHub token authentication for private repos
-- 📊 Real-time token usage monitoring and alerts
-- ⚙️ User-specific configuration via `.upgradesage` file
-- 🎯 Startup configuration validation
-- 🔍 Logical upgrade path validation
-
 ---
 
 ## Prerequisites
@@ -98,28 +91,6 @@ curl -X POST http://localhost:8000/analyze \
   "markdownReport": "## Breaking Changes\n..."
 }
 ```
-
----
-
-## Configuration
-
-UpgradeSage supports user-specific configuration through a `.upgradesage` file:
-
-```bash
-# Copy the example configuration
-cp .upgradesage.example .upgradesage
-
-# Edit to customize settings
-vim .upgradesage
-```
-
-### Key Configuration Options:
-- **GitHub Token**: Optional authentication for private repos or increased rate limits
-- **Token Monitoring**: Track LLM usage and get alerts at custom thresholds
-- **Migration Paths**: Include/exclude upgrade guidance in reports
-- **Startup Checks**: Show configuration validation at analysis start
-
-See [CONFIGURATION.md](./CONFIGURATION.md) for detailed documentation.
 
 ---
 
