@@ -1,0 +1,11 @@
+{
+  "github_token": null,
+  "include_public_repos": true,
+  "enable_token_monitoring": true,
+  "token_usage_threshold": 80,
+  "max_tokens_per_request": 120000,
+  "enable_breaking_changes_only": false,
+  "include_migration_paths": true,
+  "validate_upgrade_logic": true,
+  "show_startup_check": true
+}

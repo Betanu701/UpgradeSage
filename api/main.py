@@ -17,6 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from config import get_config_manager, UserConfig
+
 # Load .env from project root (one level up from /api)
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
@@ -270,18 +272,33 @@ async def _call_foundry(prompt: str) -> tuple[dict, dict]:
 @app.post("/analyze")
 async def analyze(req: AnalyzeRequest):
     """SSE streaming endpoint – sends live progress, then the final result."""
+    
+    config_mgr = get_config_manager()
+    config = config_mgr.load_config()
 
     async def event_stream():
         messages: list[str] = []
         overall_t0 = time.time()
+        
+        # ── Startup check (if enabled) ──
+        if config.show_startup_check:
+            startup_info = config_mgr.validate_startup()
+            yield _sse("status", {
+                "step": "config", 
+                "message": f"⚙️  Config: {startup_info['config_path']}"
+            })
+            await asyncio.sleep(0)
 
         # ── Git clone & diff (sync work, run in thread) ──
         try:
+            # Use GitHub token from config if not provided in request
+            github_token = req.githubToken or config_mgr.get_github_token()
+            
             yield _sse("status", {"step": "start", "message": f"🚀 Starting analysis: {req.repoUrl}  {req.fromRef} → {req.toRef}"})
             await asyncio.sleep(0)
 
             diff_text = await asyncio.to_thread(
-                _clone_and_diff, req.repoUrl, req.fromRef, req.toRef, req.githubToken, messages
+                _clone_and_diff, req.repoUrl, req.fromRef, req.toRef, github_token, messages
             )
             for msg in messages:
                 yield msg
@@ -310,9 +327,26 @@ async def analyze(req: AnalyzeRequest):
             t0 = time.time()
             result, usage = await _call_foundry(prompt)
             elapsed = round(time.time() - t0, 1)
-            tok = f"prompt={usage.get('prompt_tokens', '?')}, completion={usage.get('completion_tokens', '?')}"
+            
+            # Record token usage
+            prompt_tokens = usage.get('prompt_tokens', 0)
+            completion_tokens = usage.get('completion_tokens', 0)
+            config_mgr.record_token_usage(prompt_tokens, completion_tokens)
+            
+            tok = f"prompt={prompt_tokens}, completion={completion_tokens}"
             yield _sse("status", {"step": "llm", "message": f"✅ LLM responded ({elapsed}s, {tok})"})
             await asyncio.sleep(0)
+            
+            # Check token threshold
+            if config.enable_token_monitoring:
+                threshold_alert = config_mgr.check_token_threshold()
+                if threshold_alert:
+                    yield _sse("status", {
+                        "step": "token_alert",
+                        "message": f"⚠️  {threshold_alert['message']}"
+                    })
+                    await asyncio.sleep(0)
+                    
         except HTTPException as exc:
             yield _sse("error", {"message": f"💥 LLM call failed: {exc.detail}"})
             return
@@ -332,3 +366,43 @@ async def analyze(req: AnalyzeRequest):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/config/startup")
+async def get_startup_config():
+    """Get startup configuration validation."""
+    config_mgr = get_config_manager()
+    return config_mgr.validate_startup()
+
+
+@app.get("/config")
+async def get_config():
+    """Get current user configuration."""
+    config_mgr = get_config_manager()
+    config = config_mgr.load_config()
+    return config.model_dump()
+
+
+@app.post("/config")
+async def update_config(config: UserConfig):
+    """Update user configuration."""
+    config_mgr = get_config_manager()
+    config_mgr.save_config(config)
+    return {"status": "ok", "message": "Configuration updated successfully"}
+
+
+@app.get("/config/token-usage")
+async def get_token_usage():
+    """Get current token usage statistics."""
+    config_mgr = get_config_manager()
+    usage = config_mgr.get_token_usage()
+    config = config_mgr.load_config()
+    
+    percentage = usage.get_usage_percentage(config.max_tokens_per_request)
+    
+    return {
+        "usage": usage.to_dict(),
+        "percentage": round(percentage, 2),
+        "threshold": config.token_usage_threshold,
+        "alert": percentage >= config.token_usage_threshold,
+    }

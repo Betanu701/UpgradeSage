@@ -5,16 +5,66 @@ export default function App() {
   const [repoUrl, setRepoUrl] = useState("");
   const [fromRef, setFromRef] = useState("");
   const [toRef, setToRef] = useState("");
+  const [githubToken, setGithubToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [logs, setLogs] = useState([]);
+  const [tokenUsage, setTokenUsage] = useState(null);
+  const [showConfig, setShowConfig] = useState(false);
+  const [config, setConfig] = useState(null);
+  const [startupInfo, setStartupInfo] = useState(null);
   const logEndRef = useRef(null);
 
   // Auto-scroll log feed
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs]);
+  
+  // Load startup configuration
+  useEffect(() => {
+    loadStartupInfo();
+    loadTokenUsage();
+  }, []);
+
+  const backendOrigin = `${window.location.protocol}//${window.location.hostname}:8000`;
+
+  const loadStartupInfo = async () => {
+    try {
+      const resp = await fetch(`${backendOrigin}/config/startup`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setStartupInfo(data);
+      }
+    } catch (err) {
+      console.error("Failed to load startup info:", err);
+    }
+  };
+
+  const loadTokenUsage = async () => {
+    try {
+      const resp = await fetch(`${backendOrigin}/config/token-usage`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setTokenUsage(data);
+      }
+    } catch (err) {
+      console.error("Failed to load token usage:", err);
+    }
+  };
+
+  const loadConfig = async () => {
+    try {
+      const resp = await fetch(`${backendOrigin}/config`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setConfig(data);
+        setShowConfig(true);
+      }
+    } catch (err) {
+      console.error("Failed to load config:", err);
+    }
+  };
 
   const pushLog = (msg, type = "info") => {
     const ts = new Date().toLocaleTimeString();
@@ -29,15 +79,16 @@ export default function App() {
 
     pushLog("Connecting to backend…");
 
-    // Hit the backend directly (port 8000) so SSE streams in real-time.
-    // Vite's proxy buffers SSE, so we bypass it entirely.
-    const backendOrigin = `${window.location.protocol}//${window.location.hostname}:8000`;
-
     try {
       const resp = await fetch(`${backendOrigin}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repoUrl, fromRef, toRef }),
+        body: JSON.stringify({ 
+          repoUrl, 
+          fromRef, 
+          toRef,
+          githubToken: githubToken || null 
+        }),
       });
 
       if (!resp.ok) {
@@ -56,9 +107,8 @@ export default function App() {
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
 
-        // Parse complete SSE messages (separated by double newline)
         const parts = buffer.split("\n\n");
-        buffer = parts.pop(); // keep any incomplete trailing chunk
+        buffer = parts.pop();
 
         for (const part of parts) {
           if (!part.trim()) continue;
@@ -86,6 +136,9 @@ export default function App() {
           }
         }
       }
+      
+      // Reload token usage after analysis
+      await loadTokenUsage();
     } catch (err) {
       pushLog(`Error: ${err.message}`, "error");
       setError(err.message);
@@ -99,7 +152,41 @@ export default function App() {
       <header>
         <h1>🔮 UpgradeSage</h1>
         <p className="subtitle">Instant breaking-change analysis between two versions</p>
+        {startupInfo && (
+          <div className="startup-info">
+            <small>
+              📋 Config: {startupInfo.config_path}
+              {startupInfo.github_token_configured && " | 🔑 GitHub token configured"}
+            </small>
+          </div>
+        )}
       </header>
+
+      {tokenUsage && (
+        <div className={`token-usage-card ${tokenUsage.alert ? "alert" : ""}`}>
+          <div className="token-usage-header">
+            <span>📊 Token Usage</span>
+            <button 
+              className="config-btn" 
+              onClick={loadConfig}
+              title="View Configuration"
+            >
+              ⚙️
+            </button>
+          </div>
+          <div className="token-usage-details">
+            <div>
+              Total: <strong aria-label="Total tokens used">{tokenUsage.usage.total_tokens.toLocaleString()}</strong> tokens
+              (<span aria-label="Number of requests">{tokenUsage.usage.requests_count}</span> requests)
+            </div>
+            {tokenUsage.alert && (
+              <div className="token-alert" role="alert">
+                ⚠️ Usage at {tokenUsage.percentage}% of threshold
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <section className="form-card">
         <label>
@@ -133,10 +220,54 @@ export default function App() {
           </label>
         </div>
 
+        <label>
+          GitHub Token (optional)
+          <input
+            type="password"
+            placeholder="ghp_... (for private repos or rate limit increase)"
+            value={githubToken}
+            onChange={(e) => setGithubToken(e.target.value)}
+          />
+        </label>
+
         <button onClick={analyze} disabled={loading || !repoUrl || !fromRef || !toRef}>
           {loading ? "Analyzing…" : "🚀 Analyze Upgrade"}
         </button>
       </section>
+
+      {showConfig && config && (
+        <section className="config-card">
+          <div className="config-header">
+            <h3>⚙️ Configuration</h3>
+            <button className="close-btn" onClick={() => setShowConfig(false)}>✕</button>
+          </div>
+          <div className="config-details">
+            <div className="config-item">
+              <span>GitHub Token:</span>
+              <span>{config.github_token ? "Configured" : "Not set"}</span>
+            </div>
+            <div className="config-item">
+              <span>Token Monitoring:</span>
+              <span>{config.enable_token_monitoring ? "Enabled" : "Disabled"}</span>
+            </div>
+            <div className="config-item">
+              <span>Token Threshold:</span>
+              <span>{config.token_usage_threshold}%</span>
+            </div>
+            <div className="config-item">
+              <span>Include Migration Paths:</span>
+              <span>{config.include_migration_paths ? "Yes" : "No"}</span>
+            </div>
+            <div className="config-item">
+              <span>Validate Upgrade Logic:</span>
+              <span>{config.validate_upgrade_logic ? "Yes" : "No"}</span>
+            </div>
+          </div>
+          <p className="config-note">
+            💡 Edit <code>.upgradesage</code> file to customize settings
+          </p>
+        </section>
+      )}
 
       {(loading || logs.length > 0) && (
         <section className="log-card">
