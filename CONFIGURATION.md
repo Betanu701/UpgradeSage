@@ -111,7 +111,7 @@ When enabled, the LLM will provide specific steps to migrate from one version to
 
 UpgradeSage looks for `.upgradesage` in the following order:
 
-1. **Current Directory**: `./upgradesage`
+1. **Current Directory**: `./.upgradesage`
 2. **Home Directory**: `~/.upgradesage`
 3. **Defaults**: If no file is found, uses built-in defaults
 

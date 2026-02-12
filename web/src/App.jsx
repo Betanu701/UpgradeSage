@@ -176,11 +176,11 @@ export default function App() {
           </div>
           <div className="token-usage-details">
             <div>
-              Total: <strong>{tokenUsage.usage.total_tokens.toLocaleString()}</strong> tokens
-              ({tokenUsage.usage.requests_count} requests)
+              Total: <strong aria-label="Total tokens used">{tokenUsage.usage.total_tokens.toLocaleString()}</strong> tokens
+              (<span aria-label="Number of requests">{tokenUsage.usage.requests_count}</span> requests)
             </div>
             {tokenUsage.alert && (
-              <div className="token-alert">
+              <div className="token-alert" role="alert">
                 ⚠️ Usage at {tokenUsage.percentage}% of threshold
               </div>
             )}
