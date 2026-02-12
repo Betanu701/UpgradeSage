@@ -1,0 +1,21 @@
+# Environment & secrets
+.env
+
+# Python
+api/.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+web/node_modules/
+web/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
