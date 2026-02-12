@@ -271,17 +271,23 @@ async def _call_foundry(prompt: str) -> tuple[dict, dict]:
 async def analyze(req: AnalyzeRequest):
     """SSE streaming endpoint – sends live progress, then the final result."""
 
+    # Trim whitespace from inputs to prevent git fetch failures
+    repo_url = req.repoUrl.strip()
+    from_ref = req.fromRef.strip()
+    to_ref = req.toRef.strip()
+    github_token = req.githubToken.strip() if req.githubToken else None
+
     async def event_stream():
         messages: list[str] = []
         overall_t0 = time.time()
 
         # ── Git clone & diff (sync work, run in thread) ──
         try:
-            yield _sse("status", {"step": "start", "message": f"🚀 Starting analysis: {req.repoUrl}  {req.fromRef} → {req.toRef}"})
+            yield _sse("status", {"step": "start", "message": f"🚀 Starting analysis: {repo_url}  {from_ref} → {to_ref}"})
             await asyncio.sleep(0)
 
             diff_text = await asyncio.to_thread(
-                _clone_and_diff, req.repoUrl, req.fromRef, req.toRef, req.githubToken, messages
+                _clone_and_diff, repo_url, from_ref, to_ref, github_token, messages
             )
             for msg in messages:
                 yield msg

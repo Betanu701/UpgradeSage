@@ -37,7 +37,7 @@ export default function App() {
       const resp = await fetch(`${backendOrigin}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repoUrl, fromRef, toRef }),
+        body: JSON.stringify({ repoUrl: repoUrl.trim(), fromRef: fromRef.trim(), toRef: toRef.trim() }),
       });
 
       if (!resp.ok) {
