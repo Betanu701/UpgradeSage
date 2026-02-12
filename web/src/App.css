@@ -108,6 +108,48 @@ button:hover:not(:disabled) {
   }
 }
 
+/* ── Activity Log ── */
+.log-card {
+  margin-top: 1.5rem;
+  background: #111116;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+}
+.log-card h3 {
+  font-size: 0.9rem;
+  color: #a1a1aa;
+  margin-bottom: 0.6rem;
+}
+.log-feed {
+  max-height: 260px;
+  overflow-y: auto;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+.log-line {
+  display: flex;
+  gap: 0.6rem;
+}
+.log-ts {
+  color: #52525b;
+  flex-shrink: 0;
+}
+.log-msg {
+  color: #d4d4d8;
+}
+.log-status .log-msg { color: #a5b4fc; }
+.log-error  .log-msg { color: #fca5a5; }
+.log-success .log-msg { color: #86efac; }
+.log-warn .log-msg { color: #fde68a; }
+.blink {
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  50% { opacity: 0.4; }
+}
+
 /* ── Error ── */
 .error-card {
   margin-top: 1.5rem;
