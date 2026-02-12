@@ -33,6 +33,113 @@ header h1 {
   color: #a1a1aa;
   margin-top: 0.4rem;
 }
+.startup-info {
+  margin-top: 0.8rem;
+  color: #71717a;
+  font-size: 0.8rem;
+}
+
+/* ── Token Usage Card ── */
+.token-usage-card {
+  background: #1a1a22;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+.token-usage-card.alert {
+  border-color: #854d0e;
+  background: #1c1917;
+}
+.token-usage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.config-btn {
+  background: transparent;
+  border: 1px solid #3f3f46;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+  min-width: auto;
+}
+.config-btn:hover {
+  background: #27272a;
+}
+.token-usage-details {
+  font-size: 0.85rem;
+  color: #a1a1aa;
+}
+.token-alert {
+  margin-top: 0.4rem;
+  color: #fde68a;
+}
+
+/* ── Config Card ── */
+.config-card {
+  background: #1a1a22;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-top: 1rem;
+}
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.config-header h3 {
+  font-size: 1rem;
+  color: #e4e4e7;
+  margin: 0;
+}
+.close-btn {
+  background: transparent;
+  border: none;
+  color: #71717a;
+  padding: 0.2rem 0.5rem;
+  font-size: 1.2rem;
+  min-width: auto;
+}
+.close-btn:hover {
+  color: #e4e4e7;
+}
+.config-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.config-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #27272a;
+}
+.config-item span:first-child {
+  color: #a1a1aa;
+}
+.config-item span:last-child {
+  color: #e4e4e7;
+  font-weight: 500;
+}
+.config-note {
+  font-size: 0.8rem;
+  color: #71717a;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+.config-note code {
+  background: #27272a;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
 
 /* ── Form card ── */
 .form-card {
